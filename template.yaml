@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Event Registration & Ticketing System - Serverless REST API
+  (Lambda + API Gateway + DynamoDB)
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 10
+    MemorySize: 128
+    Tracing: Active            # enables AWS X-Ray tracing (helps in Phase 4/5)
+    Environment:
+      Variables:
+        EVENTS_TABLE: !Ref EventsTable
+        REGISTRATIONS_TABLE: !Ref RegistrationsTable
+        POWERTOOLS_SERVICE_NAME: event-ticketing
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, prod]
+    Description: Deployment stage
+
+Resources:
+
+  ##########################################
+  # DynamoDB Tables
+  ##########################################
+  EventsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "EventRegistration-Events-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: eventId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: eventId
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  RegistrationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "EventRegistration-Registrations-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: registrationId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: registrationId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  ##########################################
+  # API Gateway
+  ##########################################
+  EventTicketingApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+      Cors:
+        AllowMethods: "'GET,POST,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"     # tighten this to your frontend domain in Phase 5
+
+  ##########################################
+  # Lambda Functions (placeholders — real logic in Phase 2)
+  ##########################################
+  RegisterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "event-ticketing-register-${Stage}"
+      CodeUri: src/handlers/
+      Handler: register.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RegistrationsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref EventsTable
+      Events:
+        RegisterApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EventTicketingApi
+            Path: /register
+            Method: POST
+
+  ListEventsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "event-ticketing-list-events-${Stage}"
+      CodeUri: src/handlers/
+      Handler: list_events.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref EventsTable
+      Events:
+        ListEventsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EventTicketingApi
+            Path: /events
+            Method: GET
+
+  GetRegistrationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "event-ticketing-get-registrations-${Stage}"
+      CodeUri: src/handlers/
+      Handler: get_registrations.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref RegistrationsTable
+      Events:
+        GetRegistrationsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EventTicketingApi
+            Path: /registrations/{email}
+            Method: GET
+
+  CancelRegistrationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "event-ticketing-cancel-registration-${Stage}"
+      CodeUri: src/handlers/
+      Handler: cancel_registration.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RegistrationsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EventsTable
+      Events:
+        CancelRegistrationApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EventTicketingApi
+            Path: /registration/{id}
+            Method: DELETE
+
+Outputs:
+  ApiEndpoint:
+    Description: "Base URL for the API Gateway stage"
+    Value: !Sub "https://${EventTicketingApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/"
+  EventsTableName:
+    Value: !Ref EventsTable
+  RegistrationsTableName:
+    Value:
+      Ref: RegistrationsTable
