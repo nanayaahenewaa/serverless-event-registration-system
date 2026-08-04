@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# AWS SAM
+.aws-sam/
+samconfig.toml
+
+# Environment / secrets
+.env
+*.pem
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
