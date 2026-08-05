@@ -1,0 +1,4 @@
+{
+  "httpMethod": "DELETE",
+  "pathParameters": {"id": "REPLACE-WITH-A-REAL-ACTIVE-REGISTRATION-ID"}
+}

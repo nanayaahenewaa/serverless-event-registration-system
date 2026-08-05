@@ -19,3 +19,4 @@ samconfig.toml
 # IDE
 .vscode/
 .idea/
+local-env.json

@@ -1,0 +1,6 @@
+{
+  "httpMethod": "POST",
+  "body": "{\"eventId\": \"8fb7c899-73ec-4d6e-b676-32a1f6e5f9d2\", \"email\": \"localtest@example.com\"}",
+  "pathParameters": null,
+  "headers": {"Content-Type": "application/json"}
+}
