@@ -12,7 +12,7 @@
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:nanayaahenewaa/serverless-event-registration-system:*"
+          "token.actions.githubusercontent.com:sub": "repo:nanayaahenewaa@292256593/serverless-event-registration-system@1323254228:*"
         }
       }
     }
