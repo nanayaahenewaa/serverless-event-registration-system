@@ -154,7 +154,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RegistrationsTable
-        - DynamoDBCrudPolicy:
+        - DynamoDBWritePolicy:
             TableName: !Ref EventsTable
       Events:
         CancelRegistrationApi:
