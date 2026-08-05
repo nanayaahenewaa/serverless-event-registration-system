@@ -101,6 +101,8 @@ Resources:
             TableName: !Ref RegistrationsTable
         - DynamoDBReadPolicy:
             TableName: !Ref EventsTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref EventsTable
       Events:
         RegisterApi:
           Type: Api

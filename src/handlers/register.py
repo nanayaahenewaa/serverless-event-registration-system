@@ -1,13 +1,82 @@
+import json
 import logging
+import uuid
+from datetime import datetime, timezone
+
+from botocore.exceptions import ClientError
+
+from common.db import EVENTS_TABLE, REGISTRATIONS_TABLE
+from common.responses import success, error
+from common.validation import require_fields, validate_email, sanitize_string, ValidationError
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-import json
 
 def handler(event, context):
-    return {
-        "statusCode": 200,
-        "headers": {"Content-Type": "application/json"},
-        "body": json.dumps({"message": "register endpoint placeholder - Phase 2 pending"})
-    }
+    logger.info("Received request: POST /register")
+
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return error("Request body must be valid JSON", 400)
+
+    try:
+        require_fields(body, ["eventId", "email"])
+        event_id = sanitize_string(body["eventId"], max_length=100)
+        email = validate_email(body["email"])
+    except ValidationError as ve:
+        logger.warning("Validation failed: %s", str(ve))
+        return error(str(ve), 400)
+
+    # Confirm the event exists before writing a registration for it
+    event_item = EVENTS_TABLE.get_item(Key={"eventId": event_id}).get("Item")
+    if not event_item:
+        return error("Event not found", 404)
+
+    if event_item.get("registeredCount", 0) >= event_item.get("capacity", 0):
+        return error("Event is at full capacity", 409)
+
+    registration_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+
+    try:
+        # Write the registration
+        REGISTRATIONS_TABLE.put_item(
+            Item={
+                "registrationId": registration_id,
+                "email": email,
+                "eventId": event_id,
+                "registeredAt": now,
+                "status": "confirmed",
+            }
+        )
+
+        # Atomically increment registeredCount, guarding against a race
+        # condition where capacity was hit between our read above and now.
+        EVENTS_TABLE.update_item(
+            Key={"eventId": event_id},
+            UpdateExpression="SET registeredCount = registeredCount + :inc",
+            ConditionExpression="registeredCount < #cap",
+            ExpressionAttributeNames={"#cap": "capacity"},
+            ExpressionAttributeValues={":inc": 1},
+        )
+
+    except ClientError as ce:
+        if ce.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            # Roll back the registration we just wrote, since the event filled up
+            REGISTRATIONS_TABLE.delete_item(Key={"registrationId": registration_id})
+            return error("Event is at full capacity", 409)
+        logger.exception("DynamoDB error during registration")
+        return error("Internal server error while registering", 500)
+
+    logger.info("Registration created: %s for %s", registration_id, email)
+    return success(
+        {
+            "registrationId": registration_id,
+            "eventId": event_id,
+            "email": email,
+            "status": "confirmed",
+        },
+        status_code=201,
+    )
