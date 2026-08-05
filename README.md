@@ -6,9 +6,6 @@ built on AWS Lambda, API Gateway, and DynamoDB.
 ## Status
 🚧 In development — Phase 1: Infrastructure Foundation
 
-## Architecture
-(diagram coming in Phase 1 completion)
-
 ## Tech Stack
 - AWS Lambda (Python 3.12)
 - Amazon API Gateway (REST)
@@ -66,6 +63,44 @@ See [docs/data-model.md](docs/data-model.md) for full table schema and design ra
 ## Project Status
 - [x] Phase 1: Infrastructure Foundation
 - [ ] Phase 2: API Development
+- [ ] Phase 3: CI/CD
+- [ ] Phase 4: Monitoring & Security
+- [ ] Phase 5: Deployment & Optimization
+
+## API Reference
+
+### POST /register
+Registers an email for an event.
+**Body:** `{ "eventId": "string", "email": "string" }`
+**Responses:** 201 Created | 400 Validation error | 404 Event not found | 409 At capacity
+
+### GET /events
+Returns all events.
+**Responses:** 200 OK
+
+### GET /registrations/{email}
+Returns all registrations for the given email.
+**Responses:** 200 OK (empty array if none found) | 400 Invalid email
+
+### DELETE /registration/{id}
+Cancels (soft-deletes) a registration and frees event capacity.
+**Responses:** 200 OK | 404 Not found | 409 Already cancelled
+
+## Running Tests
+\`\`\`bash
+pip install -r requirements-dev.txt
+python -m pytest tests/unit/ -v
+\`\`\`
+
+## Local Development
+\`\`\`bash
+sam build
+sam local invoke <FunctionName> --event events/<event-file>.json --env-vars local-env.json
+\`\`\`
+
+## Project Status
+- [x] Phase 1: Infrastructure Foundation
+- [x] Phase 2: API Development
 - [ ] Phase 3: CI/CD
 - [ ] Phase 4: Monitoring & Security
 - [ ] Phase 5: Deployment & Optimization
