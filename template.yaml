@@ -94,8 +94,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "event-ticketing-register-${Stage}"
-      CodeUri: src/handlers/
-      Handler: register.handler
+      CodeUri: src/
+      Handler: handlers.register.handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RegistrationsTable
@@ -113,8 +113,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "event-ticketing-list-events-${Stage}"
-      CodeUri: src/handlers/
-      Handler: list_events.handler
+      CodeUri: src/
+      Handler: handlers.list_events.handler
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref EventsTable
@@ -130,8 +130,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "event-ticketing-get-registrations-${Stage}"
-      CodeUri: src/handlers/
-      Handler: get_registrations.handler
+      CodeUri: src/
+      Handler: handlers.get_registrations.handler
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref RegistrationsTable
@@ -147,8 +147,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "event-ticketing-cancel-registration-${Stage}"
-      CodeUri: src/handlers/
-      Handler: cancel_registration.handler
+      CodeUri: src/
+      Handler: handlers.cancel_registration.handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RegistrationsTable
