@@ -51,3 +51,7 @@ jobs:
             --no-fail-on-empty-changeset \
             --resolve-s3 \
             --parameter-overrides Stage=dev
+      - name: Debug secret length
+        run: echo "Role ARN length is ${#AWS_ROLE} characters"
+        env:
+          AWS_ROLE: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
