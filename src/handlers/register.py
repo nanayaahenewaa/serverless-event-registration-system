@@ -8,6 +8,7 @@ from botocore.exceptions import ClientError
 from common.db import EVENTS_TABLE, REGISTRATIONS_TABLE
 from common.responses import success, error
 from common.validation import require_fields, validate_email, sanitize_string, ValidationError
+from common.metrics import emit_metric
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -27,14 +28,17 @@ def handler(event, context):
         email = validate_email(body["email"])
     except ValidationError as ve:
         logger.warning("Validation failed: %s", str(ve))
+        emit_metric("FailedRegistration", dimensions={"Reason": "ValidationError"})
         return error(str(ve), 400)
 
     # Confirm the event exists before writing a registration for it
     event_item = EVENTS_TABLE.get_item(Key={"eventId": event_id}).get("Item")
     if not event_item:
+        emit_metric("FailedRegistration", dimensions={"Reason": "EventNotFound"})
         return error("Event not found", 404)
 
     if event_item.get("registeredCount", 0) >= event_item.get("capacity", 0):
+        emit_metric("FailedRegistration", dimensions={"Reason": "AtCapacity"})
         return error("Event is at full capacity", 409)
 
     registration_id = str(uuid.uuid4())
@@ -66,11 +70,14 @@ def handler(event, context):
         if ce.response["Error"]["Code"] == "ConditionalCheckFailedException":
             # Roll back the registration we just wrote, since the event filled up
             REGISTRATIONS_TABLE.delete_item(Key={"registrationId": registration_id})
+            emit_metric("FailedRegistration", dimensions={"Reason": "AtCapacity"})
             return error("Event is at full capacity", 409)
         logger.exception("DynamoDB error during registration")
+        emit_metric("FailedRegistration", dimensions={"Reason": "InternalError"})
         return error("Internal server error while registering", 500)
 
     logger.info("Registration created: %s for %s", registration_id, email)
+    emit_metric("SuccessfulRegistration")
     return success(
         {
             "registrationId": registration_id,
