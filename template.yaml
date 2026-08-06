@@ -96,6 +96,33 @@ Resources:
     Properties:
       TopicName: !Sub "event-ticketing-confirmations-${Stage}"
 
+  ProjectBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub "event-ticketing-${Stage}-monthly"
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: 5
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: rittaoppong9@gmail.com
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: rittaoppong9@gmail.com
 
   ##########################################
   # CloudWatch Alarms
@@ -179,6 +206,57 @@ Resources:
         - !Ref AlarmNotificationTopic
       OKActions:
         - !Ref AlarmNotificationTopic
+
+  MonitoringDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "event-ticketing-${Stage}"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0, "y": 0, "width": 12, "height": 6,
+              "properties": {
+                "title": "API Requests & Errors",
+                "metrics": [
+                  ["AWS/ApiGateway", "Count", "ApiName", "event-registration-ticketing-${Stage}"],
+                  ["AWS/ApiGateway", "5XXError", "ApiName", "event-registration-ticketing-${Stage}"],
+                  ["AWS/ApiGateway", "4XXError", "ApiName", "event-registration-ticketing-${Stage}"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 0, "width": 12, "height": 6,
+              "properties": {
+                "title": "Registration Outcomes (Custom Metrics)",
+                "metrics": [
+                  ["EventTicketingSystem", "SuccessfulRegistration"],
+                  ["EventTicketingSystem", "FailedRegistration"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 6, "width": 12, "height": 6,
+              "properties": {
+                "title": "Lambda Duration (p99)",
+                "metrics": [
+                  ["AWS/Lambda", "Duration", "FunctionName", "${RegisterFunction}", {"stat": "p99"}]
+                ],
+                "period": 300,
+                "region": "${AWS::Region}"
+              }
+            }
+          ]
+        }      
         
   RegisterFunctionDurationAlarm:
     Type: AWS::CloudWatch::Alarm
