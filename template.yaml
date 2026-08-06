@@ -88,7 +88,34 @@ Resources:
         AllowOrigin: "'*'"     # tighten this to your frontend domain in Phase 5
 
   ##########################################
-  # Lambda Functions (placeholders — real logic in Phase 2)
+  # CloudWatch Log Groups
+  ##########################################
+  RegisterFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/event-ticketing-register-${Stage}"
+      RetentionInDays: 14
+
+  ListEventsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/event-ticketing-list-events-${Stage}"
+      RetentionInDays: 14
+
+  GetRegistrationsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/event-ticketing-get-registrations-${Stage}"
+      RetentionInDays: 14
+
+  CancelRegistrationFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/event-ticketing-cancel-registration-${Stage}"
+      RetentionInDays: 14
+
+  ##########################################
+  # Lambda Functions
   ##########################################
   RegisterFunction:
     Type: AWS::Serverless::Function
@@ -171,5 +198,4 @@ Outputs:
   EventsTableName:
     Value: !Ref EventsTable
   RegistrationsTableName:
-    Value:
-      Ref: RegistrationsTable
+    Value: !Ref RegistrationsTable
