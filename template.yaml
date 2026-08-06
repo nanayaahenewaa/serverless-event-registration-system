@@ -91,6 +91,12 @@ Resources:
       Protocol: email
       Endpoint: rittaoppong9@gmail.com
 
+  RegistrationConfirmationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "event-ticketing-confirmations-${Stage}"
+
+
   ##########################################
   # CloudWatch Alarms
   ##########################################
@@ -260,6 +266,9 @@ Resources:
       FunctionName: !Sub "event-ticketing-register-${Stage}"
       CodeUri: src/
       Handler: handlers.register.handler
+      Environment:
+        Variables:
+          CONFIRMATION_TOPIC_ARN: !Ref RegistrationConfirmationTopic
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RegistrationsTable
@@ -267,6 +276,8 @@ Resources:
             TableName: !Ref EventsTable
         - DynamoDBWritePolicy:
             TableName: !Ref EventsTable
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt RegistrationConfirmationTopic.TopicName
       Events:
         RegisterApi:
           Type: Api
@@ -275,6 +286,7 @@ Resources:
             Path: /register
             Method: POST
 
+  
   ListEventsFunction:
     Type: AWS::Serverless::Function
     Properties:

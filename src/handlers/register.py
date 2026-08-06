@@ -1,8 +1,10 @@
 import json
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 
+import boto3
 from botocore.exceptions import ClientError
 
 from common.db import EVENTS_TABLE, REGISTRATIONS_TABLE
@@ -12,6 +14,9 @@ from common.metrics import emit_metric
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+sns = boto3.client("sns")
+CONFIRMATION_TOPIC_ARN = os.environ.get("CONFIRMATION_TOPIC_ARN")
 
 
 def handler(event, context):
@@ -78,6 +83,19 @@ def handler(event, context):
 
     logger.info("Registration created: %s for %s", registration_id, email)
     emit_metric("SuccessfulRegistration")
+
+    if CONFIRMATION_TOPIC_ARN:
+        try:
+            sns.publish(
+                TopicArn=CONFIRMATION_TOPIC_ARN,
+                Subject="New Event Registration",
+                Message=f"{email} registered for event {event_id} (registration {registration_id})",
+            )
+        except Exception:
+            logger.exception("Failed to publish confirmation notification")
+            # Deliberately do not fail the request over a notification issue —
+            # the registration itself already succeeded and was persisted.
+
     return success(
         {
             "registrationId": registration_id,
@@ -87,3 +105,4 @@ def handler(event, context):
         },
         status_code=201,
     )
+
