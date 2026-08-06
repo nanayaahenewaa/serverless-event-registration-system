@@ -33,6 +33,7 @@ def sanitize_string(value, max_length=200):
         raise ValidationError("Value must not be empty")
     return value
 
+
 def validate_body_size(raw_body):
     if raw_body and len(raw_body.encode("utf-8")) > MAX_BODY_SIZE_BYTES:
         raise ValidationError("Request body too large")
