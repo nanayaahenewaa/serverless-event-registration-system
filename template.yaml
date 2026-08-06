@@ -75,7 +75,7 @@ Resources:
       SSESpecification:
         SSEEnabled: true
 
-##########################################
+  ##########################################
   # SNS Topic for Alarms
   ##########################################
   AlarmNotificationTopic:
@@ -90,6 +90,49 @@ Resources:
       TopicArn: !Ref AlarmNotificationTopic
       Protocol: email
       Endpoint: rittaoppong9@gmail.com
+
+  ##########################################
+  # CloudWatch Alarms
+  ##########################################
+  RegisterFunctionErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "event-ticketing-register-error-rate-${Stage}"
+      AlarmDescription: "Triggers when RegisterFunction error rate exceeds 5%"
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Threshold: 5
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: errorRate
+          Expression: "(errors / invocations) * 100"
+          Label: "Error Rate %"
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref RegisterFunction
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref RegisterFunction
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      OKActions:
+        - !Ref AlarmNotificationTopic
 
   ##########################################
   # API Gateway
