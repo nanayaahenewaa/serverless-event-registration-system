@@ -134,6 +134,46 @@ Resources:
       OKActions:
         - !Ref AlarmNotificationTopic
 
+  ApiGateway5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "event-ticketing-api-5xx-rate-${Stage}"
+      AlarmDescription: "Triggers when API Gateway 5xx responses exceed 5% of requests"
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Threshold: 5
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: errorRate
+          Expression: "(serverErrors / requestCount) * 100"
+          Label: "5xx Rate %"
+        - Id: serverErrors
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: 5XXError
+              Dimensions:
+                - Name: ApiName
+                  Value: !Sub "event-registration-ticketing-${Stage}"
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: requestCount
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: Count
+              Dimensions:
+                - Name: ApiName
+                  Value: !Sub "event-registration-ticketing-${Stage}"
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      OKActions:
+        - !Ref AlarmNotificationTopic
+
   ##########################################
   # API Gateway
   ##########################################
