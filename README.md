@@ -134,3 +134,41 @@ debugging writeup from setting this up.
 - [x] Phase 3: Automation & CI/CD
 - [ ] Phase 4: Monitoring & Security
 - [ ] Phase 5: Deployment & Optimization
+
+
+## Monitoring & Alarms
+
+CloudWatch alarms are configured for:
+- Per-function error rate > 5% (Lambda `Errors`/`Invocations` ratio)
+- API Gateway 5xx rate > 5%
+- Lambda p99 duration approaching timeout
+- DynamoDB throttling on the Registrations table
+
+All alarms notify an SNS topic subscribed by email. Custom application metrics
+(`SuccessfulRegistration`, `FailedRegistration`) are emitted via CloudWatch
+Embedded Metric Format, visible under the `EventTicketingSystem` custom
+namespace and on the included CloudWatch dashboard
+(`event-ticketing-dev`).
+
+## Security
+
+- **IAM:** every Lambda execution role is scoped via AWS SAM policy templates
+  to only the specific DynamoDB table/SNS topic actions it needs — see
+  [docs/iam-audit.md](docs/iam-audit.md) for the verified audit.
+- **Throttling:** API Gateway is rate-limited (10 req/s sustained, 20 burst)
+  to protect against abuse and cost overrun on this public, unauthenticated API.
+- **Input validation:** all input is validated and sanitized (type, length,
+  format, request body size) before touching the database — see
+  `src/common/validation.py`.
+- **Cost control:** an AWS Budget (defined as code in `template.yaml`) alerts
+  by email at 80% of actual spend and 100% of forecasted spend, capped at $5/month.
+- **Optional confirmation notifications:** successful registrations trigger
+  an SNS notification to an internal/admin topic — see the design note in
+  the code for why this differs from per-registrant transactional email.
+
+## Project Status
+- [x] Phase 1: Infrastructure Foundation
+- [x] Phase 2: API Development
+- [x] Phase 3: Automation & CI/CD
+- [x] Phase 4: Monitoring & Security
+- [ ] Phase 5: Deployment & Optimization
