@@ -173,6 +173,44 @@ Resources:
         - !Ref AlarmNotificationTopic
       OKActions:
         - !Ref AlarmNotificationTopic
+        
+  RegisterFunctionDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "event-ticketing-register-duration-${Stage}"
+      AlarmDescription: "Triggers if RegisterFunction p99 duration exceeds 8s (Timeout is 10s)"
+      Namespace: AWS/Lambda
+      MetricName: Duration
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref RegisterFunction
+      ExtendedStatistic: p99
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 8000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+
+  RegistrationsTableThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "event-ticketing-registrations-throttle-${Stage}"
+      AlarmDescription: "Triggers on any DynamoDB throttling on the Registrations table"
+      Namespace: AWS/DynamoDB
+      MetricName: ThrottledRequests
+      Dimensions:
+        - Name: TableName
+          Value: !Ref RegistrationsTable
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
 
   ##########################################
   # API Gateway
