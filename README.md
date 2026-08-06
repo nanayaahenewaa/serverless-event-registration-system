@@ -1,5 +1,8 @@
 # Event Registration & Ticketing System
 
+![Test](https://github.com/nanayaahenewaa/serverless-event-registration-system/actions/workflows/test.yml/badge.svg)
+![Deploy](https://github.com/nanayaahenewaa/serverless-event-registration-system/actions/workflows/deploy.yml/badge.svg)
+
 A serverless REST API replacing manual (Forms + Excel) event registration,
 built on AWS Lambda, API Gateway, and DynamoDB.
 
@@ -102,5 +105,32 @@ sam local invoke <FunctionName> --event events/<event-file>.json --env-vars loca
 - [x] Phase 1: Infrastructure Foundation
 - [x] Phase 2: API Development
 - [ ] Phase 3: CI/CD
+- [ ] Phase 4: Monitoring & Security
+- [ ] Phase 5: Deployment & Optimization
+
+## CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration and deployment.
+
+- **`test.yml`** — runs on every push and pull request: lints code, validates the
+  SAM template, and runs the full unit test suite.
+- **`deploy.yml`** — runs on every merge to `main`: re-runs tests as a safety net,
+  then deploys via `sam deploy` to the `dev` stage.
+
+Authentication to AWS uses **OIDC federation** — GitHub Actions assumes a scoped
+IAM role (`github-actions-event-ticketing-deploy`) for the duration of each
+workflow run. No long-lived AWS credentials are stored in this repository.
+
+See [docs/oidc-debugging-notes.md](docs/oidc-debugging-notes.md) for a real
+debugging writeup from setting this up.
+
+### Branching Strategy
+- `main` is protected: pull requests required, status checks must pass.
+- Feature work happens on `feature/<name>` branches, merged via reviewed PRs.
+
+## Project Status
+- [x] Phase 1: Infrastructure Foundation
+- [x] Phase 2: API Development
+- [x] Phase 3: Automation & CI/CD
 - [ ] Phase 4: Monitoring & Security
 - [ ] Phase 5: Deployment & Optimization
