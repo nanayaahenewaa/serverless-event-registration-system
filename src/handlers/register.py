@@ -9,7 +9,13 @@ from botocore.exceptions import ClientError
 
 from common.db import EVENTS_TABLE, REGISTRATIONS_TABLE
 from common.responses import success, error
-from common.validation import require_fields, validate_email, sanitize_string, ValidationError
+from common.validation import (
+    require_fields,
+    validate_email,
+    sanitize_string,
+    validate_body_size,
+    ValidationError,
+)
 from common.metrics import emit_metric
 
 logger = logging.getLogger()
@@ -22,8 +28,15 @@ CONFIRMATION_TOPIC_ARN = os.environ.get("CONFIRMATION_TOPIC_ARN")
 def handler(event, context):
     logger.info("Received request: POST /register")
 
+    raw_body = event.get("body") or "{}"
+
     try:
-        body = json.loads(event.get("body") or "{}")
+        validate_body_size(raw_body)
+    except ValidationError as ve:
+        return error(str(ve), 413)
+
+    try:
+        body = json.loads(raw_body)
     except (json.JSONDecodeError, TypeError):
         return error("Request body must be valid JSON", 400)
 
@@ -105,4 +118,3 @@ def handler(event, context):
         },
         status_code=201,
     )
-

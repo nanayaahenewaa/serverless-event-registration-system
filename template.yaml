@@ -229,6 +229,11 @@ Resources:
         AllowMethods: "'GET,POST,DELETE,OPTIONS'"
         AllowHeaders: "'Content-Type,Authorization'"
         AllowOrigin: "'*'"     # tighten this to your frontend domain in Phase 5
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingRateLimit: 10
+          ThrottlingBurstLimit: 20  
 
   ##########################################
   # CloudWatch Log Groups
