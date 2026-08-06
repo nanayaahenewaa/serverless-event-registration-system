@@ -1,10 +1,12 @@
 import uuid
 import boto3
+import sys
 from datetime import datetime, timezone
 
 dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-table = dynamodb.Table("EventRegistration-Events-dev")
 
+stage = sys.argv[1] if len(sys.argv) > 1 else "dev"
+table = dynamodb.Table(f"EventRegistration-Events-{stage}")
 sample_events = [
     {
         "eventId": str(uuid.uuid4()),
