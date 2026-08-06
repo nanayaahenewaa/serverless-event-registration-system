@@ -75,6 +75,22 @@ Resources:
       SSESpecification:
         SSEEnabled: true
 
+##########################################
+  # SNS Topic for Alarms
+  ##########################################
+  AlarmNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "event-ticketing-alarms-${Stage}"
+      DisplayName: "Event Ticketing System Alarms"
+
+  AlarmEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref AlarmNotificationTopic
+      Protocol: email
+      Endpoint: rittaoppong9@gmail.com
+
   ##########################################
   # API Gateway
   ##########################################
