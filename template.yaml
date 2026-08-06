@@ -23,6 +23,24 @@ Parameters:
     AllowedValues: [dev, prod]
     Description: Deployment stage
 
+  ThrottlingRateLimit:
+    Type: Number
+    Default: 10
+    Description: Sustained requests per second allowed on the API
+
+  ThrottlingBurstLimit:
+    Type: Number
+    Default: 20
+    Description: Burst concurrency allowed on the API
+
+  LogRetentionDays:
+    Type: Number
+    Default: 14
+    Description: CloudWatch log retention period in days
+
+Conditions:
+  IsProd: !Equals [!Ref Stage, prod]
+
 Resources:
 
   ##########################################
@@ -30,6 +48,8 @@ Resources:
   ##########################################
   EventsTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: !If [IsProd, Retain, Delete]
+    UpdateReplacePolicy: !If [IsProd, Retain, Delete]
     Properties:
       TableName: !Sub "EventRegistration-Events-${Stage}"
       BillingMode: PAY_PER_REQUEST
@@ -40,7 +60,7 @@ Resources:
         - AttributeName: eventId
           KeyType: HASH
       PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
+        PointInTimeRecoveryEnabled: !If [IsProd, true, false]
       TimeToLiveSpecification:
         AttributeName: ttl
         Enabled: true
@@ -49,6 +69,8 @@ Resources:
 
   RegistrationsTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: !If [IsProd, Retain, Delete]
+    UpdateReplacePolicy: !If [IsProd, Retain, Delete]
     Properties:
       TableName: !Sub "EventRegistration-Registrations-${Stage}"
       BillingMode: PAY_PER_REQUEST
@@ -68,7 +90,7 @@ Resources:
           Projection:
             ProjectionType: ALL
       PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
+        PointInTimeRecoveryEnabled: !If [IsProd, true, false]
       TimeToLiveSpecification:
         AttributeName: ttl
         Enabled: true
@@ -310,8 +332,8 @@ Resources:
       MethodSettings:
         - ResourcePath: "/*"
           HttpMethod: "*"
-          ThrottlingRateLimit: 10
-          ThrottlingBurstLimit: 20  
+          ThrottlingRateLimit: !Ref ThrottlingRateLimit
+          ThrottlingBurstLimit: !Ref ThrottlingBurstLimit
 
   ##########################################
   # CloudWatch Log Groups
@@ -320,25 +342,25 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/event-ticketing-register-${Stage}"
-      RetentionInDays: 14
+      RetentionInDays: !Ref LogRetentionDays
 
   ListEventsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/event-ticketing-list-events-${Stage}"
-      RetentionInDays: 14
+      RetentionInDays: !Ref LogRetentionDays
 
   GetRegistrationsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/event-ticketing-get-registrations-${Stage}"
-      RetentionInDays: 14
+      RetentionInDays: !Ref LogRetentionDays
 
   CancelRegistrationFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/event-ticketing-cancel-registration-${Stage}"
-      RetentionInDays: 14
+      RetentionInDays: !Ref LogRetentionDays
 
   ##########################################
   # Lambda Functions
@@ -369,7 +391,6 @@ Resources:
             Path: /register
             Method: POST
 
-  
   ListEventsFunction:
     Type: AWS::Serverless::Function
     Properties:
