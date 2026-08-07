@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Registration & Ticketing System</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Event Registration &amp; Ticketing System</h1>
+
+    <section class="card">
+      <h2>Register for an Event</h2>
+      <form id="register-form">
+        <label for="event-select">Event</label>
+        <select id="event-select" required></select>
+
+        <label for="email-input">Email Address</label>
+        <input type="email" id="email-input" placeholder="participant@email.com" required />
+
+        <button type="submit">Register &rarr;</button>
+      </form>
+      <p id="register-message" class="message"></p>
+    </section>
+
+    <section class="card">
+      <h2>Available Events</h2>
+      <div id="events-list" class="events-list">
+        <p class="loading">Loading events...</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>My Registrations</h2>
+      <form id="lookup-form">
+        <label for="lookup-email">Email Address</label>
+        <input type="email" id="lookup-email" placeholder="participant@email.com" required />
+        <button type="submit">View My Registrations</button>
+      </form>
+      <div id="registrations-list" class="registrations-list"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
