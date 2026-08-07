@@ -172,3 +172,10 @@ namespace and on the included CloudWatch dashboard
 - [x] Phase 3: Automation & CI/CD
 - [x] Phase 4: Monitoring & Security
 - [ ] Phase 5: Deployment & Optimization
+
+## Cost
+
+This project has operated entirely within AWS Free Tier throughout
+development, across two full environments (dev and prod). As of the latest
+check: month-to-date cost $0.00, forecasted monthly cost ~$0.05, and 0 of 12
+active Free Tier service offerings at or above their usage limits.
