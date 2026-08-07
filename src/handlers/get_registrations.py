@@ -1,3 +1,16 @@
+import logging
+from urllib.parse import unquote
+
+from boto3.dynamodb.conditions import Key
+
+from common.db import REGISTRATIONS_TABLE
+from common.responses import success, error
+from common.validation import validate_email, ValidationError
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+
 def handler(event, context):
     logger.info("Received request: GET /registrations/{email}")
 
@@ -15,8 +28,15 @@ def handler(event, context):
             IndexName="EmailIndex",
             KeyConditionExpression=Key("email").eq(email),
         )
+
         items = response.get("Items", [])
-        logger.info("Found %d registrations for %s", len(items), email)
+
+        logger.info(
+            "Found %d registrations for %s",
+            len(items),
+            email,
+        )
+
         return success(
             {
                 "email": email,
@@ -27,4 +47,7 @@ def handler(event, context):
 
     except Exception:
         logger.exception("Failed to fetch registrations for %s", email)
-        return error("Internal server error while fetching registrations", 500)
+        return error(
+            "Internal server error while fetching registrations",
+            500,
+        )
