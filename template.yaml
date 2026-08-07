@@ -476,6 +476,35 @@ Resources:
             Action: s3:GetObject
             Resource: !Sub "${FrontendBucket.Arn}/*"  
 
+  FrontendCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Aliases:
+          - events.cloudastra.online
+        ViewerCertificate:
+          AcmCertificateArn: arn:aws:acm:us-east-1:323022620104:certificate/0a201e96-7cae-4673-b9bc-f22033ed1ac7
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        Origins:
+          - Id: FrontendS3Origin
+            DomainName: !Select [2, !Split ["/", !GetAtt FrontendBucket.WebsiteURL]]
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+        DefaultCacheBehavior:
+          TargetOriginId: FrontendS3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          Compress: true
+        PriceClass: PriceClass_100
+
 Outputs:
   ApiEndpoint:
     Description: "Base URL for the API Gateway stage"
@@ -486,3 +515,5 @@ Outputs:
     Value: !Ref RegistrationsTable
   FrontendUrl:
     Value: !GetAtt FrontendBucket.WebsiteURL
+  CloudFrontUrl:
+    Value: !Sub "https://${FrontendCloudFrontDistribution.DomainName}"
