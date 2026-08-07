@@ -444,6 +444,38 @@ Resources:
             Path: /registration/{id}
             Method: DELETE
 
+  ##########################################
+  # Frontend Static Hosting
+  ##########################################
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "event-ticketing-frontend-${Stage}-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: false
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "${FrontendBucket.Arn}/*"  
+
 Outputs:
   ApiEndpoint:
     Description: "Base URL for the API Gateway stage"
@@ -452,3 +484,5 @@ Outputs:
     Value: !Ref EventsTable
   RegistrationsTableName:
     Value: !Ref RegistrationsTable
+  FrontendUrl:
+    Value: !GetAtt FrontendBucket.WebsiteURL
